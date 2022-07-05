@@ -1,0 +1,240 @@
+---
+title: "Introduction à l'analyse de séquence et à son application en psychologie développementale"
+author:
+  - Anonyme
+output:
+  pdf_document: 
+    keep_tex: yes
+    latex_engine: xelatex
+    fig_width: 7
+    fig_height: 7
+    toc: yes
+  html_document:
+    df_print: paged
+  word_document: default
+date: "`r  format(Sys.time(), '%Y-%m-%d') `"
+toc: true 
+---
+<p>&nbsp;</p>
+
+***Résumé***: Plusieurs champs de recherche en psychoéducation et en psychologie développementale visent à examiner les changements individuels et au sein des populations. On cherche, par exemple, à identifier les parcours typiques lors de périodes développementales précises, comme la délinquance à l’adolescence et la transition de l’école au travail au début de l’âge adulte, afin de comprendre celles qui paraissent plus ou moins optimales. Cet article a comme objectif de présenter une approche algorithmique permettant de tracer de tels parcours sous forme de séquences à partir de variables catégorielles/nominales, comme des statuts (p. ex. : occupationnels, maritaux), des états (p. ex. : de santé) ou des comportements (p. ex. : consommation) pouvant changer de façon qualitative au fil du temps. Il s’agit des analyses de séquences, qui sont abondamment utilisées en Europe, mais qui demeurent peu connues en Amérique du Nord. L’article présente les fondements et l’application de cette méthode, en décrivant chacune des étapes analytiques à partir d’un exemple fictif tiré de banques de données portant sur le passage de l’adolescence à l’âge adulte. L’article conclut par une discussion rapportant les forces et les limites des analyses de séquences dite algorithmiques en sciences sociales.
+
+***Mots-clés***: analyses de séquence; appariement optimal; trajectoires et parcours longitudinaux; approche algorithmique \newpage 
+
+# Introduction
+Ce document présente le code utilisé pour la création du modèle présenté dans l'article et explique en détail le code de l'analyse de séquence. 
+
+Tout d'abord, il faut évidemment télécharger les packages nécessaires à l'analyse.
+```{r output='hide', message=FALSE, warning=FALSE}
+#Téléchargement des packages nécessaire à l'analyse (si vous installez ces packages 
+#pour la première fois, retirez # au début de chaque ligne "install.packages")
+
+#install.packages("readr")
+#install.packages("ggplot2")
+#install.packages("poLCA")
+#install.packages("haven")
+#install.packages("dplyr")
+#install.packages("TraMineR")
+#install.packages("WeightedCluster")
+#install.packages("fpc")
+#install.packages("descr")
+#install.packages("flexclust")
+#install.packages("nnet")
+#install.packages("glmnet")
+#install.packages("lmtest")
+
+
+library(readr)
+library(ggplot2)
+library(poLCA)
+library(haven)
+library(dplyr)
+library(TraMineR)
+library(WeightedCluster)
+library(fpc)
+library(descr)
+library(flexclust)
+library(nnet)
+library(glmnet)
+library(lmtest)
+library(latex2exp)
+library(knitr)
+
+opts_chunk$set(echo = TRUE, prompt = TRUE, comment = "", cache = TRUE)
+options(xtable.comment = FALSE)
+```
+
+Il faut également télécharger la base de données (disponible sur Github au https://github.com/labo-lacourse/Analyse-sequence) à partir de laquelle les analyses seront réalisées. 
+\newpage
+***Attention***: ce lien sera mis à jour une fois que le Github sera public.
+
+```{r}
+#Télécharger le fichier de données à partir de github
+#SEEAS.csv <- "https://raw.githubusercontent.com/labo-lacourse/Analyse-sequence/main/SEEAS.csv"
+
+#Lire le fichier de données téléchargé depuis github (vérification du téléchargement)
+#library(readr)
+#df <- read.csv("SEEAS.csv")
+#ls(df)
+```
+
+
+```{r include=F}
+#Syntaxe d'importation des données locales
+df <- read.csv("Travail/Archives/Classes_latentes_NEET/Données/SEEAS.csv")
+```
+
+# 1. Analyse de séquence
+
+## 1.1 Préparation des données
+
+Pour simplifier l'interprétation des résultats, nous commençons par attribuer des étiquettes (*labels*), ainsi qu'une version abrégée de ces étiquettes, à chaque modalité des variables. Ainsi, à chaque temps, un individu se voir attribuer l'un de ces quatre statuts: Emploi (E), Éducation secondaire (ES), Éducation postsecondaire (EP) ou NEET (N).
+```{r}
+#Étiquetter les données
+df.lab <- c("NEET", "Emploi","Education secondaire", 
+                     "Education postsecondaire")
+df.shortlab <- c("N", "T", "ES", "EP")
+
+#Attacher la base de données avec les nouvelles étiquettes
+attach(df)
+```
+
+
+Ensuite, il faut indiquer au logiciel de traiter les variables visées comme des données d'une même séquence. Ainsi, les variables M1r à M48r, représentant le statut d'emploi/éducation de l'individu à chaque point de collecte de donnée, sont utilisées pour créer une séquence par  individu, tout en conservant les étiquettes créées précédemment.
+
+```{r message=FALSE, warning=FALSE, output='hide', results='hide'}
+#Analyse de séquence
+#Creation des donnees en sequence
+(df.alph <- seqstatl(df[, 1:48]))
+df.seq <- seqdef(df[, 1:48], alphabet = df.alph,
+                    labels = df.lab, states = df.shortlab,
+                    xtstep = 4)
+
+```
+
+\newpage
+## 1.2 Représentations visuelles et analyses descriptives
+
+Comme les représentations graphiques sont essentielles à la compréhension de l'analyse de séquence, on attribue une couleur à chaque statut pour en faciliter l'interprétation. On crée ensuite un graphique représentant les séquences individuelles, superposées en suivant l'ordre des observations dans la base de données. L'axe des X indique le temps de mesure (de 1 à 48) et l'axe des Y le numéro de l'observation dont la séquence est illustrée.
+
+```{r, }
+#Determiner les couleurs#
+cpal(df.seq)<- c("blue", "red", "green", "purple")
+
+#Faire graphique de toutes les sequences de l'échantillon##
+#séquence individuelles
+seqIplot (df.seq, border = NA)
+```
+\newpage
+Comme on le constate, ce premier graphique est plutôt difficile à interpréter. C'est pourquoi on crée également un deuxième graphique, celui-ci regroupant plutôt le nombre d'observations attribuées à chaque statut en fonction des mois, créant un graphique plus aisément interprétable. Encore un fois, l'axe des X indique le temps de mesure (de 1 à 48), mais l'axe des Y représente la proportion des observations auxquelles sont attribuées chaque statut. On peut concevoir ce graphique comme l'équivalent d'un graphique à barre empilées.
+
+```{r, }
+#par mois, le nombre de personne dans chaque statut (plus lisible)
+seqdplot(df.seq,border = NA)
+```
+
+Afin de compléter l'analyse, on calcule également la moyenne de temps passé dans chacun des statuts (en nombre de mois), qu'on représente ensuite par un graphique. Ici, l'axe des Y représente le nombre de temps de mesure.
+\newpage
+```{r, }
+##Moyenne de temps passé dans chacun des statuts (en nombre de mois)
+seqmeant(df.seq)
+
+#En graphique
+seqmtplot(df.seq,  ylim = c(0, 20))
+```
+
+
+
+
+Cette mesure permet également de calculer un taux de transition, soit la proportion des fois où un statut X est suivi d'un statut Y. On remarque évidemment qu'il est particulièrement fréquent que le statut à un temps X soit suivi du même statut au temps X+1. 
+
+\newpage
+On peut aussi relever les séquences les plus fréquentes à travers l'échantillon. Ici-bas, on présente les 10 séquences les plus fréquentes. Finalement, on peut aussi calculer le nombre moyen de transitions par séquence, soit le nombre de changements de statut dans la trajectoire d'un individu.
+
+```{r}
+#Taux de transition 
+round(seqtrate(df.seq), digits = 2)
+
+#Séquence la plus commune de l'échantillon
+seqtab(df.seq, idxs = 1:10) 
+
+#Donnees individuelles 
+mean(seqtransn(df.seq)) ##Nombre de transition
+```
+
+## 1.3 Création de la typologie
+
+Nous passons maintenant à la création du modèle en soi. La première étape consiste à calculer les mesures de dissimilarité par la méthode d’appariement optimal [OMtrate] (avec les coûts de substitution correspondant aux taux de transition [TRATE] et ceux des indel établis à 1) entre chaque séquence. Cette opération crée également la matrice de dissimilarité. On indique ensuite le nombre de classifications que l'on veut examiner: ici, on examine les modèles comprenant de 1 à 8 catégories. La méthode du clustering hiérarchique a été retenue pour créer les classifications.
+
+```{r message=FALSE, warning=FALSE, output='hide'}
+##Avec clustering hierarchique#
+OMtrate <- seqdist(df.seq, method = "OM", indel = 1, sm = "TRATE")
+hc.ward <- hclust(as.dist(OMtrate), method = "ward.D")
+df.clust <- as.clustrange(hc.ward, diss = OMtrate, ncluster = 8)
+```
+
+\newpage
+Par la suite, on examine donc en détail les différentes solutions possibles. Les solutions de 2 à 8 catégories ont été analysées afin de sélectionner la solution la mieux ajustée aux données. À des fins de concision, seuls les résultats des solutions à quatre et cinq catégories sont présentés en détail ici. On produit d'abord les graphiques représentant le nombre d'observations attribuées à chaque statut en fonction des mois, qui permet de comparer aisément la composition des différentes catégories.  On calcule également la moyenne de temps passé dans chacun des statuts (en nombre de mois), pour produire le graphique représentant la séquence "moyenne" ou "typique" de chaque catégorie. Ces représentations graphiques permettent de comparer les différentes classifications.
+
+```{r fig.height=6}
+#modèles à 4 et 5 catégories
+
+#4 solution 
+#enregistrer la solution à 4 clusters
+clusterH4 <- df.clust$clustering$cluster4
+
+#graphique
+seqdplot(df.seq, group = df.clust$clustering$cluster4, border = NA)
+
+#graphique
+icenter <- disscenter(OMtrate, factor(clusterH4), medoids.index="first")
+seqiplot (df.seq[icenter,])
+```
+
+\newpage
+```{r fig.height=4.5, fig.width=7}
+#5 solution
+#enregistrer la solution à 5 clusters
+clusterH5 <- df.clust$clustering$cluster5
+#graphique
+seqdplot(df.seq, group = df.clust$clustering$cluster5, border = NA, cols = 3)
+```
+
+\newpage
+```{r fig.height=6}
+#graphique
+icenter <- disscenter(OMtrate, factor(clusterH5), medoids.index="first")
+seqiplot (df.seq[icenter,])
+
+```
+
+\newpage
+Ensuite, on examine les indicateurs d'ajustement des différentes classifications pour confirmer le choix du modèle. Un ensemble de tests statistiques permet de comparer les typologies estimées afin de déterminer celle qui se révèle la plus adéquate. Parmi ceux-ci, le point biserial et le HG (Hubert’s Gamma) peuvent être utilisés, et indiquent à quel point la classification élaborée (nombre de catégories) parvient à réassigner de manière constante les séquences dans la bonne catégorie. De leur côté, les critères de ASW et de ASWw (Average Silhouette Width; Average Silhouette Width weighted) examine le degré d’homogénéité des catégories et si elles parviennent à se distinguer significativement les unes des autres. Enfin, l’index de Hubert (Hubert’s C; HC) relate l’écart entre la classification testée et la meilleure classification théoriquement possible effectuée avec le même nombre de catégories et les mêmes propriétés de séquences. Ces indicées d'ajustement sont présentées ici pour les solutions de 2 à 8 catégories: on voit que la majorité des indices pointe vers la sélection du modèle à 5 catégories.
+
+```{r fig.height=9.5, fig.width=7}
+#indices d'ajustement
+df.clust
+plot(df.clust, stat = 'all', norm = 'zscore', lwd = 2)
+```
+
+\newpage
+Afin d'examiner plus précisément les solutions à 4 et 5 catégories, on peut également produire les ASW et ASWw pour chaque catégorie de ces deux modèles.
+
+```{r}
+#ASW par catégorie
+cl4qual <- wcClusterQuality(OMtrate,df.clust$clustering$cluster4)
+cl4qual$ASW
+cl5qual <- wcClusterQuality(OMtrate,df.clust$clustering$cluster5)
+cl5qual$ASW
+```
+
+Finalement, on ajoute la classification choisie (5 catégories)  comme variable dans la base de données, identifiant la catégorie d'appartenance de chaque observation, afin de pouvoir l'utiliser dans de futures analyses.
+
+```{r message=FALSE, warning=FALSE}
+#ajout d'une variable dans la base de données
+df$SA5class <- as.numeric(clusterH5)
+attach(df)
+```
+
+# Licence
+Dans le respect des principes de la science ouverte, le code présenté ici est protégé par une licence CC-BY permettant la reproduction et la modification libre du contenu tant et aussi longtemps que la source est dûment citée. Pour plus de détails sur cette licence et les conditions qu'elle entraine, consulter https://creativecommons.org/licenses/by/2.0/ .
