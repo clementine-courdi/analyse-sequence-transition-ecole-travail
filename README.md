@@ -1,4 +1,4 @@
-#Introduction à l’analyse de séquence et illustration de son application en sciences sociales à partir de patrons de transitions de l’école au travail
+# Introduction à l’analyse de séquence et illustration de son application en sciences sociales à partir de patrons de transitions de l’école au travail
 ## É. Thouin, C. Courdi, E. Olivier, V. Dupéré, A.-S. Denault et É. Lacourse
 ## Publié dans: Revue de psychoéducation, volume 51, numéro 2 (2022)
 
