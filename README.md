@@ -10,4 +10,4 @@ Le script utilisé pour réaliser les analyses de cet article est disponible dan
 Vous trouverez également dans ce dépôt un "workflow" résumant visuellement les étapes de l'analyse de séquence et la logique de l'article.
 
 Citation recommandée:
-Thouin, É., Courdi, C., Olivier, E., Dupéré, V., Denault, A.-S. et Lacourse, É. (2022). Introduction à l’analyse de séquence et illustration de son application en sciences sociales à partir de patrons de transitions de l’école au travail. Revue de psychoéducation, 51(2), 427-449.
+Thouin, É., Courdi, C., Olivier, E., Dupéré, V., Denault, A.-S. & Lacourse, É. (2022). Introduction à l’analyse de séquence et illustration de son application en sciences sociales à partir de patrons de transitions de l’école au travail. *Revue de psychoéducation, 51*(2), 427–449. https://doi.org/10.7202/1093470ar
